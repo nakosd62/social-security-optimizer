@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Social Security Optimizer</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <style>
     :root {
       --bg: #f4f6f8;
@@ -178,6 +181,58 @@
     td:first-child, th:first-child { text-align: center; }
     td:nth-child(2), th:nth-child(2) { text-align: left; }
     tr.best { background: var(--best); }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.6rem;
+    }
+    .card-head h2 { margin: 0; }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .toggle button {
+      border: none;
+      background: var(--card);
+      color: var(--muted);
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .toggle button + button { border-left: 1px solid var(--border); }
+    .toggle button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+    .compare {
+      margin-top: 0.75rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--border);
+    }
+    .compare h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .compare ul { margin: 0; padding-left: 1.1rem; }
+    .compare li { margin: 0.1rem 0; }
+    .gain { font-weight: 600; color: #1d7a3a; }
+    .note { color: var(--muted); font-size: 0.82rem; margin: 0.45rem 0 0; }
+    .near-optimal {
+      background: #eef5ff;
+      border: 1px solid #cfe0f7;
+      border-radius: 6px;
+      padding: 0.45rem 0.65rem;
+      margin-top: 0.6rem;
+      font-size: 0.85rem;
+    }
+    td.neg { color: var(--muted); }
   </style>
 </head>
 <body>
@@ -225,8 +280,15 @@
     </div>
 
     {% if result %}
+    {% macro money(m) %}<span class="money" data-n="{{ m.n }}" data-r="{{ m.r }}">{{ m.n }}</span>{% endmacro %}
     <div class="card">
-      <h2>Summary</h2>
+      <div class="card-head">
+        <h2>Summary</h2>
+        <div class="toggle" role="group" aria-label="Dollar basis">
+          <button type="button" data-mode="n" aria-pressed="true">Nominal</button>
+          <button type="button" data-mode="r" aria-pressed="false">Today's dollars</button>
+        </div>
+      </div>
       <div class="summary">
         <div class="summary-item">
           <strong>Optimal filing age</strong>
@@ -234,16 +296,37 @@
         </div>
         <div class="summary-item">
           <strong>Total Benefits (Gross / Net)</strong>
-          <span>{{ result.best.total_benefits }} / {{ result.best.net_benefits }}</span>
+          <span>{{ money(result.best.total_benefits) }} / {{ money(result.best.net_benefits) }}</span>
         </div>
         <div class="summary-item">
           <strong>Total Taxes Paid</strong>
-          <span>{{ result.best.total_taxes }}</span>
+          <span>{{ money(result.best.total_taxes) }}</span>
         </div>
         <div class="summary-item">
           <strong>Portfolio at {{ result.end_age }}</strong>
-          <span>{{ result.best.portfolio }}</span>
+          <span>{{ money(result.best.portfolio) }}</span>
         </div>
+      </div>
+
+      <div class="compare">
+        <h3>Optimal ({{ result.best.filing_age }}) vs. other choices — portfolio at {{ result.end_age }}</h3>
+        {% if result.comparisons %}
+        <ul>
+          {% for c in result.comparisons %}
+          <li><span class="gain">{{ money(c.gain) }}</span> ({{ c.pct }}) vs. filing {{ c.label }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="near-optimal">
+          {% if result.near_optimal.count > 1 %}
+          Any filing age from <strong>{{ result.near_optimal.from }}</strong> to <strong>{{ result.near_optimal.to }}</strong>
+          ends within {{ result.near_optimal.pct }} ({{ money(result.near_optimal.amount) }}) of the best.
+          Differences that small are well inside the uncertainty of the return, COLA and end-age assumptions.
+          {% else %}
+          No other filing age comes within {{ result.near_optimal.pct }} of the best.
+          {% endif %}
+        </div>
+        <p class="note" id="basis-note">Nominal dollars: amounts as they will actually be paid, including future COLA increases.</p>
       </div>
     </div>
 
@@ -265,44 +348,58 @@
     <script>
       (function () {
         const data = {{ result.chart | tojson }};
+        const growthData = {{ result.growth_chart | tojson }};
         const endAge = {{ result.end_age }};
+        const inflationPct = {{ result.inflation_pct | tojson }};
+        let mode = "n";
+        // Taller charts on narrow (phone) screens
+        const narrow = window.innerWidth < 640;
+        const chartAspect = narrow ? 1.1 : 2.75;
+
+        const BASIS = {
+          n: {
+            note: "Nominal dollars: amounts as they will actually be paid, including future COLA increases.",
+            filingY: "Nominal dollars through age " + endAge,
+            growthY: "Portfolio value (nominal)",
+          },
+          r: {
+            note: "Today's dollars: each amount deflated back to today at " + inflationPct +
+              "/yr inflation (your COLA rate). The best filing age is the same either way.",
+            filingY: "Today's dollars through age " + endAge,
+            growthY: "Portfolio value (today's dollars)",
+          },
+        };
 
         function formatMoney(value) {
           return "$" + Math.round(value).toLocaleString("en-US");
         }
-
         function formatMoneyShort(value) {
-          if (value >= 1e6) return "$" + (value / 1e6).toFixed(1) + "M";
+          if (value >= 1e6) return "$" + (value / 1e6).toFixed(2).replace(/0$/, "") + "M";
           if (value >= 1e3) return "$" + Math.round(value / 1e3) + "K";
           return "$" + Math.round(value);
         }
 
+        // ---- Filing-age comparison chart ----
         const bestIndex = data.best_index;
-        const pointRadius = data.labels.map((_, i) => (i === bestIndex ? 7 : 3));
-        const pointHoverRadius = data.labels.map((_, i) => (i === bestIndex ? 9 : 6));
-
-        const ctx = document.getElementById("filing-chart");
-        new Chart(ctx, {
+        const filingChart = new Chart(document.getElementById("filing-chart"), {
           type: "line",
           data: {
             labels: data.labels,
             datasets: [
               {
                 label: "Portfolio at " + endAge,
-                data: data.portfolio,
+                data: data.portfolio.n,
                 borderColor: "#1f5fbf",
                 backgroundColor: "rgba(31, 95, 191, 0.08)",
                 borderWidth: 2,
                 tension: 0.15,
-                pointRadius: pointRadius,
-                pointHoverRadius: pointHoverRadius,
-                pointBackgroundColor: data.labels.map((_, i) =>
-                  i === bestIndex ? "#d62728" : "#1f5fbf"
-                ),
+                pointRadius: data.labels.map((_, i) => (i === bestIndex ? 7 : 3)),
+                pointHoverRadius: data.labels.map((_, i) => (i === bestIndex ? 9 : 6)),
+                pointBackgroundColor: data.labels.map((_, i) => (i === bestIndex ? "#d62728" : "#1f5fbf")),
               },
               {
                 label: "Total benefits",
-                data: data.benefits,
+                data: data.benefits.n,
                 borderColor: "#e67e22",
                 backgroundColor: "rgba(230, 126, 34, 0.06)",
                 borderWidth: 2,
@@ -316,7 +413,7 @@
           options: {
             responsive: true,
             maintainAspectRatio: true,
-            aspectRatio: 2.75,
+            aspectRatio: chartAspect,
             interaction: { mode: "index", intersect: false },
             plugins: {
               legend: { position: "top" },
@@ -327,7 +424,12 @@
                     return "File at " + data.labels[i] + " (wait " + i + " mo)";
                   },
                   label: function (ctx) {
-                    return ctx.dataset.label + ": " + formatMoney(ctx.raw);
+                    let text = ctx.dataset.label + ": " + formatMoney(ctx.raw);
+                    if (ctx.datasetIndex === 0 && ctx.dataIndex !== bestIndex) {
+                      const best = ctx.dataset.data[bestIndex];
+                      text += "  (" + formatMoney(ctx.raw - best).replace("$-", "−$") + " vs. best)";
+                    }
+                    return text;
                   },
                 },
               },
@@ -338,89 +440,59 @@
                 ticks: {
                   maxRotation: 0,
                   autoSkip: false,
-                  callback: function(val, index) {
+                  callback: function (val) {
                     const label = this.getLabelForValue(val);
-                    if (label.endsWith("y 0m") || label.endsWith("y 6m")) {
-                      return label;
-                    }
-                    return null;
-                  }
+                    if (narrow) return label.endsWith("y 0m") ? label.split("y")[0] : null;
+                    return label.endsWith("y 0m") || label.endsWith("y 6m") ? label : null;
+                  },
                 },
               },
               y: {
-                title: { display: true, text: "Nominal dollars through age " + endAge },
+                title: { display: true, text: BASIS.n.filingY },
                 ticks: { callback: (v) => formatMoneyShort(v) },
               },
             },
           },
         });
-      })();
 
-      (function () {
-        const growthData = {{ result.growth_chart | tojson if result and result.growth_chart else 'null' }};
-        if (!growthData) return;
-
-        function formatMoney(value) {
-          return "$" + Math.round(value).toLocaleString("en-US");
-        }
-        function formatMoneyShort(value) {
-          if (value >= 1e6) return "$" + (value / 1e6).toFixed(1) + "M";
-          if (value >= 1e3) return "$" + Math.round(value / 1e3) + "K";
-          return "$" + Math.round(value);
-        }
-
+        // ---- Portfolio growth chart ----
         const colors = {
           "Start Now": "#7f8c8d",
           "Start at Age 65": "#1abc9c",
-          "Start at Age 66": "#2ecc71",
           "Start at Age 67": "#3498db",
-          "Start at Age 68": "#9b59b6",
-          "Start at Age 69": "#f1c40f",
-          "Start at Age 70": "#e67e22"
+          "Start at Age 70": "#e67e22",
         };
-
-        const datasets = growthData.datasets.map(ds => {
-          const isOptimal = ds.label.startsWith("Optimal");
-          let color = "#d62728";
-          if (!isOptimal) {
-            color = colors[ds.label] || "#34495e";
-          }
-          return {
-            label: ds.label,
-            data: ds.data,
-            borderColor: color,
-            borderWidth: isOptimal ? 3.5 : 2,
-            tension: 0.1,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            fill: false
-          };
-        });
-
-        const ctx = document.getElementById("growth-chart");
-        new Chart(ctx, {
+        const growthChart = new Chart(document.getElementById("growth-chart"), {
           type: "line",
           data: {
             labels: growthData.labels,
-            datasets: datasets
+            datasets: growthData.datasets.map((ds) => {
+              const isOptimal = ds.label.startsWith("Optimal");
+              return {
+                label: ds.label,
+                data: ds.data.n,
+                borderColor: isOptimal ? "#d62728" : colors[ds.label] || "#34495e",
+                borderWidth: isOptimal ? 3.5 : 2,
+                tension: 0.1,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                fill: false,
+              };
+            }),
           },
           options: {
             responsive: true,
             maintainAspectRatio: true,
-            aspectRatio: 2.75,
+            aspectRatio: chartAspect,
             interaction: { mode: "index", intersect: false },
             plugins: {
               legend: { position: "top", labels: { boxWidth: 12 } },
               tooltip: {
                 callbacks: {
-                  title: function (items) {
-                    return "Age: " + items[0].label;
-                  },
-                  label: function (ctx) {
-                    return ctx.dataset.label + ": " + formatMoney(ctx.raw);
-                  }
-                }
-              }
+                  title: (items) => "Age: " + items[0].label,
+                  label: (ctx) => ctx.dataset.label + ": " + formatMoney(ctx.raw),
+                },
+              },
             },
             scales: {
               x: {
@@ -428,22 +500,49 @@
                 ticks: {
                   maxRotation: 0,
                   autoSkip: false,
-                  callback: function(val, index) {
+                  callback: function (val) {
                     const label = this.getLabelForValue(val);
-                    if (label.endsWith("y 0m")) {
-                      return label.split(" ")[0];
-                    }
-                    return null;
-                  }
-                }
+                    if (!label.endsWith("y 0m")) return null;
+                    const years = parseInt(label, 10);
+                    return !narrow || years % 5 === 0 ? years + "y" : null;
+                  },
+                },
               },
               y: {
-                title: { display: true, text: "Portfolio Value" },
-                ticks: { callback: (v) => formatMoneyShort(v) }
-              }
-            }
-          }
+                title: { display: true, text: BASIS.n.growthY },
+                ticks: { callback: (v) => formatMoneyShort(v) },
+              },
+            },
+          },
         });
+
+        // ---- Nominal / today's dollars toggle ----
+        function setMode(m) {
+          mode = m;
+          document.querySelectorAll(".money").forEach((el) => { el.textContent = el.dataset[m]; });
+          document.querySelectorAll(".toggle button").forEach((b) => {
+            b.setAttribute("aria-pressed", b.dataset.mode === m ? "true" : "false");
+          });
+          document.getElementById("basis-note").textContent = BASIS[m].note;
+
+          filingChart.data.datasets[0].data = data.portfolio[m];
+          filingChart.data.datasets[1].data = data.benefits[m];
+          filingChart.options.scales.y.title.text = BASIS[m].filingY;
+          filingChart.update();
+
+          growthChart.data.datasets.forEach((ds, i) => { ds.data = growthData.datasets[i].data[m]; });
+          growthChart.options.scales.y.title.text = BASIS[m].growthY;
+          growthChart.update();
+
+          try { localStorage.setItem("ssoDollarBasis", m); } catch (e) {}
+        }
+
+        document.querySelectorAll(".toggle button").forEach((b) => {
+          b.addEventListener("click", () => setMode(b.dataset.mode));
+        });
+        let saved = null;
+        try { saved = localStorage.getItem("ssoDollarBasis"); } catch (e) {}
+        if (saved === "r") setMode("r");
       })();
     </script>
 
@@ -462,6 +561,7 @@
               <th>Est Taxes</th>
               <th>Net Benefits</th>
               <th>Portfolio@{{ result.end_age }}</th>
+              <th>vs. Best</th>
             </tr>
           </thead>
           <tbody>
@@ -472,10 +572,11 @@
               <td>{{ row.filing_age }}</td>
               <td>{{ row.monthly_benefit }}</td>
               <td>{{ row.collection_months }}</td>
-              <td>{{ row.total_benefits }}</td>
-              <td>{{ row.total_taxes }}</td>
-              <td>{{ row.net_benefits }}</td>
-              <td>{{ row.portfolio }}</td>
+              <td>{{ money(row.total_benefits) }}</td>
+              <td>{{ money(row.total_taxes) }}</td>
+              <td>{{ money(row.net_benefits) }}</td>
+              <td>{{ money(row.portfolio) }}</td>
+              {% if row.vs_best %}<td class="neg">{{ money(row.vs_best) }}</td>{% else %}<td>best</td>{% endif %}
             </tr>
             {% endfor %}
           </tbody>

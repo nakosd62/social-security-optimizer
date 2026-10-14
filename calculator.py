@@ -34,6 +34,12 @@ class ScenarioResult:
     final_portfolio_value: float
     total_nominal_value: float  # benefits + investment growth (final portfolio)
     portfolio_history: list[float]
+    # Same figures in today's dollars (deflated month by month at the COLA rate)
+    real_total_benefits: float = 0.0
+    real_total_taxes: float = 0.0
+    real_net_benefits: float = 0.0
+    real_final_portfolio: float = 0.0
+    real_portfolio_history: list[float] = field(default_factory=list)
 
 
 def months_until_age(from_age_years: float, target_age_years: float) -> int:
@@ -106,6 +112,7 @@ def simulate_scenario(profile: UserProfile, wait_months: int) -> ScenarioResult:
             final_portfolio_value=0.0,
             total_nominal_value=0.0,
             portfolio_history=[0.0] * (total_months + 1),
+            real_portfolio_history=[0.0] * (total_months + 1),
         )
 
     current_age_months = round(profile.current_age_years * 12)
@@ -115,12 +122,18 @@ def simulate_scenario(profile: UserProfile, wait_months: int) -> ScenarioResult:
 
     running_benefit = profile.fra_benefit * benefit_factor(months_diff)
     invest_r = monthly_rate(profile.investment_annual_rate)
+    # Inflation is assumed equal to COLA (COLA is CPI-indexed).
+    inflation_r = monthly_rate(profile.cola_annual_rate)
 
     portfolio = 0.0
     benefits_sum = 0.0
     taxes_sum = 0.0
     net_benefits_sum = 0.0
     portfolio_history = [0.0]
+    real_benefits_sum = 0.0
+    real_taxes_sum = 0.0
+    real_net_sum = 0.0
+    real_portfolio_history = [0.0]
 
     for m in range(1, total_months + 1):
         cal_month = (profile.current_month - 1 + m) % 12 + 1
@@ -134,10 +147,15 @@ def simulate_scenario(profile: UserProfile, wait_months: int) -> ScenarioResult:
             benefits_sum += running_benefit
             taxes_sum += tax
             net_benefits_sum += net_benefit
+            deflator = (1.0 + inflation_r) ** m
+            real_benefits_sum += running_benefit / deflator
+            real_taxes_sum += tax / deflator
+            real_net_sum += net_benefit / deflator
         else:
             portfolio = portfolio * (1.0 + invest_r)
 
         portfolio_history.append(portfolio)
+        real_portfolio_history.append(portfolio / (1.0 + inflation_r) ** m)
 
     return ScenarioResult(
         wait_months=wait,
@@ -150,6 +168,11 @@ def simulate_scenario(profile: UserProfile, wait_months: int) -> ScenarioResult:
         final_portfolio_value=portfolio,
         total_nominal_value=portfolio,
         portfolio_history=portfolio_history,
+        real_total_benefits=real_benefits_sum,
+        real_total_taxes=real_taxes_sum,
+        real_net_benefits=real_net_sum,
+        real_final_portfolio=real_portfolio_history[-1],
+        real_portfolio_history=real_portfolio_history,
     )
 
 

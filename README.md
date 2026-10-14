@@ -47,6 +47,13 @@ Options: `python3 main.py --port 8080` (different port), `--host 0.0.0.0` (reach
 5. **Investment** — Each after-tax check goes into a portfolio earning the stated return, compounded monthly. Investment gains are not taxed.
 6. **Optimal** — The filing month with the largest portfolio at the end age.
 
+## Reading the results
+
+- **Optimal vs. other choices** — how much more the optimal filing age leaves you at the end age than filing now, at 67, and at 70 (in dollars and %).
+- **Near-optimal range** — every filing age that ends within 1% of the best. The curve is usually flat near the top, so treat this range, not the single "optimal" month, as the answer.
+- **Nominal / Today's dollars** — toggle at the top of the summary. Today's dollars deflates every amount back to today using the COLA rate as inflation. The best filing age is the same either way; only the dollar figures change.
+- **Table** — every filing month, with a "vs. Best" column.
+
 The result depends heavily on the end age: earlier end ages favor filing now, later ones favor waiting until 70. Try a few. Not modeled: spousal/survivor benefits, the earnings test if you work before FRA, and mortality risk.
 
 ## Code layout
