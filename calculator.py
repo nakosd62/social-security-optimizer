@@ -1,5 +1,5 @@
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -9,8 +9,10 @@ class UserProfile:
     current_age_years: float = 64.25  # 64 years 3 months
     fra_age_years: float = 67.0       # Full Retirement Age
     fra_benefit: float = 3000.0       # Monthly benefit if filing at FRA
-    current_month: int = datetime.date.today().month  # Current calendar month
-    current_year: int = datetime.date.today().year    # Current calendar year
+    # Evaluated each time a profile is created (not once at import), so a
+    # long-running server always uses today's month/year.
+    current_month: int = field(default_factory=lambda: datetime.date.today().month)
+    current_year: int = field(default_factory=lambda: datetime.date.today().year)
     max_filing_age: float = 70.0
     analysis_end_age: float = 85.0
     cola_annual_rate: float = 0.03
@@ -42,6 +44,22 @@ def monthly_rate(annual_rate: float) -> float:
     return (1.0 + annual_rate) ** (1.0 / 12.0) - 1.0
 
 
+def benefit_factor(months_from_fra: int) -> float:
+    """
+    Fraction of the FRA benefit paid when filing `months_from_fra` months
+    relative to Full Retirement Age (negative = early, positive = delayed).
+
+    Early: -5/9 of 1% per month for the first 36 months, then -5/12 of 1%
+    per additional month (SSA rules). Delayed: +2/3 of 1% per month (8%/yr).
+    """
+    if months_from_fra < 0:
+        early = -months_from_fra
+        first = min(early, 36)
+        extra = early - first
+        return 1.0 - first * (5 / 9) / 100 - extra * (5 / 12) / 100
+    return 1.0 + months_from_fra * (2 / 3) / 100
+
+
 def monthly_benefit_at_filing(profile: UserProfile, wait_months: int) -> float:
     max_wait = months_until_age(profile.current_age_years, profile.max_filing_age)
     wait = min(wait_months, max_wait)
@@ -51,12 +69,7 @@ def monthly_benefit_at_filing(profile: UserProfile, wait_months: int) -> float:
     filing_age_months = current_age_months + wait
     months_diff = filing_age_months - fra_months
 
-    if months_diff < 0:
-        factor = 1.0 + months_diff * (5/9)*0.01 
-    else:
-        factor = 1.0 + months_diff * (2/3)*0.01
-
-    benefit = profile.fra_benefit * factor
+    benefit = profile.fra_benefit * benefit_factor(months_diff)
 
     # Apply COLA during wait months when calendar month is January
     for m in range(1, wait + 1):
@@ -100,12 +113,7 @@ def simulate_scenario(profile: UserProfile, wait_months: int) -> ScenarioResult:
     filing_age_months = current_age_months + wait
     months_diff = filing_age_months - fra_months
 
-    if months_diff < 0:
-        factor = 1.0 + months_diff * (5/9)*0.01
-    else:
-        factor = 1.0 + months_diff * (2/3)*0.01
-
-    running_benefit = profile.fra_benefit * factor
+    running_benefit = profile.fra_benefit * benefit_factor(months_diff)
     invest_r = monthly_rate(profile.investment_annual_rate)
 
     portfolio = 0.0

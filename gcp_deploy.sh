@@ -1,5 +1,5 @@
 #!/bin/bash
 gcloud run deploy social-security-optimizer \
   --source . \
-  --region us-central1 \
+  --region us-east1 \
   --allow-unauthenticated
