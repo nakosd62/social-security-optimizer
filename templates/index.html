@@ -16,9 +16,10 @@
       --border: #d8dee8;
       --accent: #1f5fbf;
       --accent-hover: #174a96;
-      --best: #fff8e6;
       --error-bg: #fdecea;
       --error-text: #8a1c1c;
+      --selected: #eb6834;
+      --side: 15.6rem; /* width of the inputs and summary column */
     }
     * { box-sizing: border-box; }
     body {
@@ -29,560 +30,313 @@
       line-height: 1.4;
       font-size: 14px;
     }
-    .wrap {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 1rem 0.75rem 2rem;
-    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 0.7rem 0.75rem 0.75rem; }
     h1 { margin: 0; font-size: 1.35rem; }
-    .subtitle { color: var(--muted); margin: 0.2rem 0 0.75rem; font-size: 0.85rem; }
+    h1 { margin-bottom: 0.55rem; }
+    .note-inputs { color: var(--muted); margin: 0; font-size: 0.78rem; line-height: 1.35; }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 0.75rem 1rem;
+      padding: 0.6rem 1rem;
       margin-bottom: 0.75rem;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     }
-    .card h2 {
-      margin: 0 0 0.6rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-    }
-    form.inputs {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-end;
-      gap: 0.5rem 0.75rem;
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-      min-width: 0;
-    }
+    .card h2 { margin: 0 0 0.6rem; font-size: 0.95rem; font-weight: 600; }
+    .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+    .card-head h2 { margin: 0; }
+    .hint { color: var(--muted); font-size: 0.82rem; }
+    form.inputs { display: flex; flex-direction: column; align-items: stretch; gap: 0.7rem; }
+    .field { display: flex; flex-direction: column; gap: 0.15rem; }
     .field label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-      white-space: nowrap;
+      font-size: 0.7rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap;
     }
+    .field-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.6rem; }
     .field input {
-      width: 5.5rem;
-      padding: 0.35rem 0.45rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 0.9rem;
+      width: 100%; padding: 0.35rem 0.45rem; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 0.9rem;
     }
-    .field.wide input { width: 6.5rem; }
-    .field.age-y input { width: 3.25rem; }
-    .field.age-m input { width: 3.25rem; }
     button[type="submit"] {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 0.4rem 0.9rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      height: 2rem;
-      align-self: flex-end;
+      background: var(--accent); color: #fff; border: none; border-radius: 6px;
+      padding: 0.4rem 0.9rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; height: 2.1rem; margin-top: 0.2rem;
     }
     button[type="submit"]:hover { background: var(--accent-hover); }
     .error {
-      background: var(--error-bg);
-      color: var(--error-text);
-      border: 1px solid #f5c2c0;
-      border-radius: 6px;
-      padding: 0.5rem 0.65rem;
-      margin-bottom: 0.5rem;
-      font-size: 0.85rem;
+      background: var(--error-bg); color: var(--error-text); border: 1px solid #f5c2c0;
+      border-radius: 6px; padding: 0.5rem 0.65rem; margin-bottom: 0.5rem; font-size: 0.85rem;
     }
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.5rem 1rem;
+
+    /* Layout: inputs | heatmap on top, summary | chart below */
+    .top { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); gap: 0.75rem; align-items: stretch; }
+    .bottom { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); gap: 0.75rem; align-items: stretch; }
+    .top > .card, .bottom > .card { margin-bottom: 0; }
+    .bottom { margin-top: 0.6rem; }
+    @media (max-width: 860px) {
+      .top, .bottom { grid-template-columns: minmax(0, 1fr); }
     }
+
+    /* Heatmap */
+    .heat-wrap { display: flex; gap: 0.4rem; }
+    .y-title {
+      writing-mode: vertical-rl; transform: rotate(180deg); text-align: center;
+      font-size: 0.75rem; color: var(--muted);
+    }
+    .heat {
+      flex: 1; min-width: 0; display: grid;
+      grid-template-columns: 2.6rem repeat({{ grid.end_ages|length if grid else 11 }}, minmax(0, 1fr));
+      gap: 2px;
+    }
+    .heat .ylab { font-size: 0.75rem; color: var(--muted); text-align: right; padding-right: 0.4rem; align-self: center; }
+    .heat .xlab { font-size: 0.75rem; color: var(--muted); text-align: center; padding-top: 0.25rem; }
+    .heat button.cell {
+      border: none; border-radius: 3px; height: 1.56rem; padding: 0; cursor: pointer;
+      font: inherit; font-size: 0.72rem; font-weight: 600; white-space: nowrap; overflow: hidden;
+    }
+    .heat button.cell:hover { outline: 2px solid var(--text); outline-offset: -2px; }
+    .heat button.cell:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+    .heat button.cell[aria-pressed="true"] { outline: 3px solid var(--selected); outline-offset: -3px; }
+    .x-title { text-align: center; font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+    .heat .short { display: none; }
     @media (max-width: 640px) {
-      .summary { grid-template-columns: 1fr; }
+      .heat button.cell { font-size: 0.68rem; height: 1.9rem; }
+      .heat .full { display: none; }
+      .heat .short { display: inline; }
+      .heat { grid-template-columns: 2rem repeat({{ grid.end_ages|length if grid else 11 }}, minmax(0, 1fr)); }
     }
+
+    /* Details */
+    .summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.4rem; }
     .summary-item strong {
-      display: block;
-      color: var(--muted);
-      font-size: 0.68rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      margin-bottom: 0.1rem;
+      display: block; color: var(--muted); font-size: 0.68rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0;
     }
-    .summary-item span {
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-    .chart-wrap {
-      position: relative;
-      width: 100%;
-      max-height: min(340px, 42vh);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.35rem 0.5rem 0.5rem;
-      background: #fafbfc;
-    }
-    details.table-details {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--card);
-      overflow: hidden;
-    }
-    details.table-details summary {
-      padding: 0.6rem 0.85rem;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      list-style: none;
-      user-select: none;
-    }
-    details.table-details summary::-webkit-details-marker { display: none; }
-    details.table-details summary::before {
-      content: "▸ ";
-      display: inline-block;
-      transition: transform 0.15s ease;
-    }
-    details.table-details[open] summary::before {
-      transform: rotate(90deg);
-    }
-    .table-wrap {
-      overflow: auto;
-      max-height: 360px;
-      border-top: 1px solid var(--border);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-    th, td {
-      padding: 0.35rem 0.6rem;
-      text-align: right;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    th {
-      position: sticky;
-      top: 0;
-      background: #eef2f7;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    td:first-child, th:first-child { text-align: center; }
-    td:nth-child(2), th:nth-child(2) { text-align: left; }
-    tr.best { background: var(--best); }
-    .card-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 0.6rem;
-    }
-    .card-head h2 { margin: 0; }
-    .toggle {
-      display: inline-flex;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .toggle button {
-      border: none;
-      background: var(--card);
-      color: var(--muted);
-      padding: 0.3rem 0.7rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .toggle button + button { border-left: 1px solid var(--border); }
-    .toggle button[aria-pressed="true"] { background: var(--accent); color: #fff; }
-    .compare {
-      margin-top: 0.75rem;
-      padding-top: 0.65rem;
-      border-top: 1px solid var(--border);
-    }
-    .compare h3 {
-      margin: 0 0 0.35rem;
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    .compare ul { margin: 0; padding-left: 1.1rem; }
-    .compare li { margin: 0.1rem 0; }
-    .gain { font-weight: 600; color: #1d7a3a; }
-    .note { color: var(--muted); font-size: 0.82rem; margin: 0.45rem 0 0; }
+    .summary-item span { font-size: 1rem; font-weight: 600; }
+    .compare { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
     .near-optimal {
-      background: #eef5ff;
-      border: 1px solid #cfe0f7;
-      border-radius: 6px;
-      padding: 0.45rem 0.65rem;
-      margin-top: 0.6rem;
-      font-size: 0.85rem;
+      background: #eef5ff; border: 1px solid #cfe0f7; border-radius: 6px;
+      padding: 0.35rem 0.55rem; font-size: 0.82rem;
     }
-    td.neg { color: var(--muted); }
+    .chart-card { display: flex; flex-direction: column; }
+    .chart-wrap {
+      position: relative; flex: 1; min-height: 0; width: 100%; border: 1px solid var(--border);
+      border-radius: 6px; background: #fafbfc;
+    }
+    /* absolutely positioned so the chart never sets the row height itself */
+    .chart-box { position: absolute; inset: 0.3rem 0.45rem 0.35rem; }
+    @media (max-width: 860px) { .chart-wrap { flex: none; height: 320px; } }
+    .near-optimal strong { white-space: nowrap; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Social Security Optimizer</h1>
-    <p class="subtitle">Filing through age 70 · analysis runs to your chosen end age</p>
 
+    <div class="top">
     <div class="card">
-      {% if error %}
-      <div class="error">{{ error }}</div>
-      {% endif %}
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
       <form class="inputs" method="post">
-        <div class="field age-y">
-          <label for="current_age_years">Age (y)</label>
-          <input id="current_age_years" type="number" name="current_age_years" min="0" max="69" step="1" required value="{{ form.current_age_years }}">
-        </div>
-        <div class="field age-m">
-          <label for="current_age_months">(mo)</label>
-          <input id="current_age_months" type="number" name="current_age_months" min="0" max="11" step="1" required value="{{ form.current_age_months }}">
-        </div>
-
-        <div class="field wide">
+        <div class="field">
           <label for="fra_benefit">FRA Benefit ($/mo)</label>
-          <input id="fra_benefit" type="number" name="fra_benefit" min="0" step="1" required value="{{ form.fra_benefit }}">
+          <input id="fra_benefit" type="number" name="fra_benefit" min="1" max="100000" step="1" required value="{{ form.fra_benefit }}">
         </div>
-
-        <div class="field age-y">
-          <label for="analysis_end_age">End age</label>
-          <input id="analysis_end_age" type="number" name="analysis_end_age" min="0" max="120" step="1" required value="{{ form.analysis_end_age }}">
-        </div>
-        <div class="field age-y">
-          <label for="cola_percent">COLA %</label>
-          <input id="cola_percent" type="number" name="cola_percent" min="0" max="100" step="0.1" required value="{{ form.cola_percent }}">
-        </div>
-        <div class="field age-y">
-          <label for="investment_return_percent">Return %</label>
-          <input id="investment_return_percent" type="number" name="investment_return_percent" min="0" max="100" step="0.1" required value="{{ form.investment_return_percent }}">
-        </div>
-        <div class="field age-y">
+        <div class="field">
           <label for="tax_rate_percent">Tax %</label>
           <input id="tax_rate_percent" type="number" name="tax_rate_percent" min="0" max="100" step="0.1" required value="{{ form.tax_rate_percent }}">
         </div>
+        <div class="field-pair">
+        <div class="field">
+          <label for="cola_percent">COLA %</label>
+          <input id="cola_percent" type="number" name="cola_percent" min="0" max="20" step="0.1" required value="{{ form.cola_percent }}">
+        </div>
+        <div class="field">
+          <label for="inflation_percent">Inflation %</label>
+          <input id="inflation_percent" type="number" name="inflation_percent" min="-5" max="20" step="0.1" required value="{{ form.inflation_percent }}">
+        </div>
+        </div>
+        <p class="note-inputs">All amounts in today's dollars (adjusted for inflation).</p>
         <button type="submit">Calculate</button>
       </form>
     </div>
 
-    {% if result %}
-    {% macro money(m) %}<span class="money" data-n="{{ m.n }}" data-r="{{ m.r }}">{{ m.n }}</span>{% endmacro %}
-    <div class="card">
-      <div class="card-head">
-        <h2>Summary</h2>
-        <div class="toggle" role="group" aria-label="Dollar basis">
-          <button type="button" data-mode="n" aria-pressed="true">Nominal</button>
-          <button type="button" data-mode="r" aria-pressed="false">Today's dollars</button>
-        </div>
-      </div>
-      <div class="summary">
-        <div class="summary-item">
-          <strong>Optimal filing age</strong>
-          <span>{{ result.best.filing_age }}</span>
-        </div>
-        <div class="summary-item">
-          <strong>Total Benefits (Gross / Net)</strong>
-          <span>{{ money(result.best.total_benefits) }} / {{ money(result.best.net_benefits) }}</span>
-        </div>
-        <div class="summary-item">
-          <strong>Total Taxes Paid</strong>
-          <span>{{ money(result.best.total_taxes) }}</span>
-        </div>
-        <div class="summary-item">
-          <strong>Portfolio at {{ result.end_age }}</strong>
-          <span>{{ money(result.best.portfolio) }}</span>
-        </div>
-      </div>
+    {% if not grid %}</div>{% endif %}
 
-      <div class="compare">
-        <h3>Optimal ({{ result.best.filing_age }}) vs. other choices — portfolio at {{ result.end_age }}</h3>
-        {% if result.comparisons %}
-        <ul>
-          {% for c in result.comparisons %}
-          <li><span class="gain">{{ money(c.gain) }}</span> ({{ c.pct }}) vs. filing {{ c.label }}</li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-        <div class="near-optimal">
-          {% if result.near_optimal.count > 1 %}
-          Any filing age from <strong>{{ result.near_optimal.from }}</strong> to <strong>{{ result.near_optimal.to }}</strong>
-          ends within {{ result.near_optimal.pct }} ({{ money(result.near_optimal.amount) }}) of the best.
-          Differences that small are well inside the uncertainty of the return, COLA and end-age assumptions.
-          {% else %}
-          No other filing age comes within {{ result.near_optimal.pct }} of the best.
-          {% endif %}
+    {% if grid %}
+    {# One color per filing year, 62 (lightest) .. 70 (darkest) #}
+    {% set ramp = ['#cde2fb', '#b7d3f6', '#9ec5f4', '#6da7ec', '#3987e5', '#2a78d6', '#256abf', '#184f95', '#0d366b'] %}
+    {% set ink = ['#0d366b', '#0d366b', '#0d366b', '#0d366b', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'] %}
+    <div class="card">
+      <div class="card-head" style="justify-content: flex-start; gap: 0.4rem 0.75rem;">
+        <h2>Optimal filing age</h2>
+        <span class="hint" id="pick-hint">Click a square to see the details for that end age and return.</span>
+      </div>
+      <div class="heat-wrap">
+        <div class="y-title">Investment return (before inflation)</div>
+        <div style="flex: 1; min-width: 0;">
+          <div class="heat" role="grid" aria-label="Optimal filing age by end age and investment return">
+            {% for row in grid.rows %}
+              {% set ri = loop.index0 %}
+              <div class="ylab">{{ row.ret }}%</div>
+              {% for cell in row.cells %}
+                {% set b = 8 if cell.best_years >= 69.99 else ([0, [7, (cell.best_years|int) - 62]|min]|max) %}
+                <button type="button" class="cell" data-r="{{ ri }}" data-c="{{ loop.index0 }}" aria-pressed="false"
+                  style="background: {{ ramp[b] }}; color: {{ ink[b] }};"
+                  title="End age {{ cell.end_age }}, return {{ cell.ret }}%: file at {{ cell.label }}"><span class="full">{{ cell.label }}</span><span class="short">{{ cell.best_years|int }}</span></button>
+              {% endfor %}
+            {% endfor %}
+            <div></div>
+            {% for e in grid.end_ages %}<div class="xlab">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="x-title">End age (how long you live)</div>
         </div>
-        <p class="note" id="basis-note">Nominal dollars: amounts as they will actually be paid, including future COLA increases.</p>
       </div>
     </div>
-
-    <div class="card">
-      <h2>Comparison Chart</h2>
-      <div class="chart-wrap">
-        <canvas id="filing-chart" aria-label="Filing timing comparison chart"></canvas>
-      </div>
     </div>
 
-    <div class="card">
-      <h2>Portfolio Growth Over Time</h2>
-      <div class="chart-wrap">
-        <canvas id="growth-chart" aria-label="Portfolio growth over time chart"></canvas>
+    <div id="details" class="bottom" hidden>
+      <div class="card">
+        <div class="card-head">
+          <h2 id="d-title"></h2>
+        </div>
+        <div class="summary">
+          <div class="summary-item"><strong>Optimal filing age</strong><span id="d-age"></span></div>
+          <div class="summary-item"><strong>Starting benefit</strong><span id="d-monthly"></span></div>
+          <div class="summary-item"><strong>Total Benefits</strong><span id="d-benefits"></span></div>
+          <div class="summary-item"><strong id="d-portfolio-label"></strong><span id="d-portfolio"></span></div>
+          <div class="summary-item"><strong>Total Taxes Paid</strong><span id="d-taxes"></span></div>
+        </div>
+        <div class="compare">
+          <div class="near-optimal" id="d-near"></div>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <h2>Portfolio and benefits by age you start</h2>
+        <div class="chart-wrap"><div class="chart-box"><canvas id="filing-chart" aria-label="Portfolio and total benefits by filing age"></canvas></div></div>
       </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script>
       (function () {
-        const data = {{ result.chart | tojson }};
-        const growthData = {{ result.growth_chart | tojson }};
-        const endAge = {{ result.end_age }};
-        const inflationPct = {{ result.inflation_pct | tojson }};
-        let mode = "n";
-        // Taller charts on narrow (phone) screens
-        const narrow = window.innerWidth < 640;
-        const chartAspect = narrow ? 1.1 : 2.75;
+        const GRID = {{ grid | tojson }};
+        const labels = GRID.filing_labels;
+        let chart = null;
+        let current = null;
 
-        const BASIS = {
-          n: {
-            note: "Nominal dollars: amounts as they will actually be paid, including future COLA increases.",
-            filingY: "Nominal dollars through age " + endAge,
-            growthY: "Portfolio value (nominal)",
-          },
-          r: {
-            note: "Today's dollars: each amount deflated back to today at " + inflationPct +
-              "/yr inflation (your COLA rate). The best filing age is the same either way.",
-            filingY: "Today's dollars through age " + endAge,
-            growthY: "Portfolio value (today's dollars)",
-          },
-        };
-
-        function formatMoney(value) {
-          return "$" + Math.round(value).toLocaleString("en-US");
+        function formatMoney(v) { return "$" + Math.round(v).toLocaleString("en-US"); }
+        function formatMoneyShort(v) {
+          if (v >= 1e6) return "$" + (v / 1e6).toFixed(2).replace(/0$/, "") + "M";
+          if (v >= 1e3) return "$" + Math.round(v / 1e3) + "K";
+          return "$" + Math.round(v);
         }
-        function formatMoneyShort(value) {
-          if (value >= 1e6) return "$" + (value / 1e6).toFixed(2).replace(/0$/, "") + "M";
-          if (value >= 1e3) return "$" + Math.round(value / 1e3) + "K";
-          return "$" + Math.round(value);
+        function escapeHtml(s) {
+          return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
         }
 
-        // ---- Filing-age comparison chart ----
-        const bestIndex = data.best_index;
-        const filingChart = new Chart(document.getElementById("filing-chart"), {
-          type: "line",
-          data: {
-            labels: data.labels,
-            datasets: [
-              {
-                label: "Portfolio at " + endAge,
-                data: data.portfolio.n,
-                borderColor: "#1f5fbf",
-                backgroundColor: "rgba(31, 95, 191, 0.08)",
-                borderWidth: 2,
-                tension: 0.15,
-                pointRadius: data.labels.map((_, i) => (i === bestIndex ? 7 : 3)),
-                pointHoverRadius: data.labels.map((_, i) => (i === bestIndex ? 9 : 6)),
-                pointBackgroundColor: data.labels.map((_, i) => (i === bestIndex ? "#d62728" : "#1f5fbf")),
-              },
-              {
-                label: "Total benefits",
-                data: data.benefits.n,
-                borderColor: "#e67e22",
-                backgroundColor: "rgba(230, 126, 34, 0.06)",
-                borderWidth: 2,
-                borderDash: [6, 4],
-                tension: 0.15,
-                pointRadius: 2,
-                pointHoverRadius: 5,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: chartAspect,
-            interaction: { mode: "index", intersect: false },
-            plugins: {
-              legend: { position: "top" },
-              tooltip: {
-                callbacks: {
-                  title: function (items) {
-                    const i = items[0].dataIndex;
-                    return "File at " + data.labels[i] + " (wait " + i + " mo)";
-                  },
-                  label: function (ctx) {
-                    let text = ctx.dataset.label + ": " + formatMoney(ctx.raw);
-                    if (ctx.datasetIndex === 0 && ctx.dataIndex !== bestIndex) {
-                      const best = ctx.dataset.data[bestIndex];
-                      text += "  (" + formatMoney(ctx.raw - best).replace("$-", "−$") + " vs. best)";
-                    }
-                    return text;
-                  },
-                },
-              },
-            },
-            scales: {
-              x: {
-                title: { display: true, text: "Age when you start benefits" },
-                ticks: {
-                  maxRotation: 0,
-                  autoSkip: false,
-                  callback: function (val) {
-                    const label = this.getLabelForValue(val);
-                    if (narrow) return label.endsWith("y 0m") ? label.split("y")[0] : null;
-                    return label.endsWith("y 0m") || label.endsWith("y 6m") ? label : null;
+        function renderChart(cell) {
+          const d = cell.details;
+          const best = d.best_index;
+          const portfolio = {
+            label: "Portfolio at " + cell.end_age,
+            data: d.portfolio_series,
+            borderColor: "#1f5fbf",
+            backgroundColor: "rgba(31, 95, 191, 0.08)",
+            borderWidth: 2,
+            tension: 0.15,
+            pointRadius: labels.map((_, i) => (i === best ? 7 : 3)),
+            pointHoverRadius: labels.map((_, i) => (i === best ? 9 : 6)),
+            pointBackgroundColor: labels.map((_, i) => (i === best ? "#d62728" : "#1f5fbf")),
+          };
+          const benefits = {
+            label: "Total benefits",
+            data: d.benefit_series,
+            borderColor: "#e67e22",
+            backgroundColor: "rgba(230, 126, 34, 0.06)",
+            borderWidth: 2,
+            borderDash: [6, 4],
+            tension: 0.15,
+            pointRadius: 2,
+            pointHoverRadius: 5,
+          };
+          if (chart) {
+            chart.data.datasets = [portfolio, benefits];
+            chart.options.scales.y.title.text = "Today's dollars through age " + cell.end_age;
+            chart.update();
+            return;
+          }
+          chart = new Chart(document.getElementById("filing-chart"), {
+            type: "line",
+            data: { labels: labels, datasets: [portfolio, benefits] },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: "index", intersect: false },
+              plugins: {
+                legend: { position: "top" },
+                tooltip: {
+                  callbacks: {
+                    title: (items) => "File at " + labels[items[0].dataIndex] + " (wait " + items[0].dataIndex + " mo)",
+                    label: function (ctx) {
+                      let text = ctx.dataset.label + ": " + formatMoney(ctx.raw);
+                      const b = current.details.best_index;
+                      if (ctx.datasetIndex === 0 && ctx.dataIndex !== b) {
+                        const diff = ctx.raw - ctx.dataset.data[b];
+                        text += "  (" + (diff < 0 ? "−" : "+") + formatMoney(Math.abs(diff)) + " vs. best)";
+                      }
+                      return text;
+                    },
                   },
                 },
               },
-              y: {
-                title: { display: true, text: BASIS.n.filingY },
-                ticks: { callback: (v) => formatMoneyShort(v) },
-              },
-            },
-          },
-        });
-
-        // ---- Portfolio growth chart ----
-        const colors = {
-          "Start Now": "#7f8c8d",
-          "Start at Age 65": "#1abc9c",
-          "Start at Age 67": "#3498db",
-          "Start at Age 70": "#e67e22",
-        };
-        const growthChart = new Chart(document.getElementById("growth-chart"), {
-          type: "line",
-          data: {
-            labels: growthData.labels,
-            datasets: growthData.datasets.map((ds) => {
-              const isOptimal = ds.label.startsWith("Optimal");
-              return {
-                label: ds.label,
-                data: ds.data.n,
-                borderColor: isOptimal ? "#d62728" : colors[ds.label] || "#34495e",
-                borderWidth: isOptimal ? 3.5 : 2,
-                tension: 0.1,
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                fill: false,
-              };
-            }),
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: chartAspect,
-            interaction: { mode: "index", intersect: false },
-            plugins: {
-              legend: { position: "top", labels: { boxWidth: 12 } },
-              tooltip: {
-                callbacks: {
-                  title: (items) => "Age: " + items[0].label,
-                  label: (ctx) => ctx.dataset.label + ": " + formatMoney(ctx.raw),
-                },
-              },
-            },
-            scales: {
-              x: {
-                title: { display: true, text: "Your Age" },
-                ticks: {
-                  maxRotation: 0,
-                  autoSkip: false,
-                  callback: function (val) {
-                    const label = this.getLabelForValue(val);
-                    if (!label.endsWith("y 0m")) return null;
-                    const years = parseInt(label, 10);
-                    return !narrow || years % 5 === 0 ? years + "y" : null;
+              scales: {
+                x: {
+                  title: { display: true, text: "Age when you start benefits" },
+                  ticks: {
+                    maxRotation: 0,
+                    autoSkip: false,
+                    callback: function (val) {
+                      const label = this.getLabelForValue(val);
+                      return label.endsWith("y 0m") ? label.split("y")[0] : null;
+                    },
                   },
                 },
-              },
-              y: {
-                title: { display: true, text: BASIS.n.growthY },
-                ticks: { callback: (v) => formatMoneyShort(v) },
+                y: {
+                  title: { display: true, text: "Today's dollars through age " + cell.end_age },
+                  ticks: { callback: (v) => formatMoneyShort(v) },
+                },
               },
             },
-          },
-        });
-
-        // ---- Nominal / today's dollars toggle ----
-        function setMode(m) {
-          mode = m;
-          document.querySelectorAll(".money").forEach((el) => { el.textContent = el.dataset[m]; });
-          document.querySelectorAll(".toggle button").forEach((b) => {
-            b.setAttribute("aria-pressed", b.dataset.mode === m ? "true" : "false");
           });
-          document.getElementById("basis-note").textContent = BASIS[m].note;
-
-          filingChart.data.datasets[0].data = data.portfolio[m];
-          filingChart.data.datasets[1].data = data.benefits[m];
-          filingChart.options.scales.y.title.text = BASIS[m].filingY;
-          filingChart.update();
-
-          growthChart.data.datasets.forEach((ds, i) => { ds.data = growthData.datasets[i].data[m]; });
-          growthChart.options.scales.y.title.text = BASIS[m].growthY;
-          growthChart.update();
-
-          try { localStorage.setItem("ssoDollarBasis", m); } catch (e) {}
         }
 
-        document.querySelectorAll(".toggle button").forEach((b) => {
-          b.addEventListener("click", () => setMode(b.dataset.mode));
-        });
-        let saved = null;
-        try { saved = localStorage.getItem("ssoDollarBasis"); } catch (e) {}
-        if (saved === "r") setMode("r");
+        function select(btn) {
+          const cell = GRID.rows[+btn.dataset.r].cells[+btn.dataset.c];
+          const d = cell.details;
+          current = cell;
+          document.querySelectorAll(".heat button.cell").forEach((b) => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+
+          document.getElementById("d-title").textContent = "End age " + cell.end_age + " · return " + cell.ret + "%";
+          document.getElementById("d-age").textContent = d.filing_age;
+          document.getElementById("d-monthly").textContent = d.monthly_benefit + "/mo";
+          document.getElementById("d-benefits").textContent = d.total_benefits;
+          document.getElementById("d-taxes").textContent = d.total_taxes;
+          document.getElementById("d-portfolio-label").textContent = "Portfolio at " + cell.end_age;
+          document.getElementById("d-portfolio").textContent = d.portfolio;
+          const n = d.near_optimal;
+          document.getElementById("d-near").innerHTML = n.count > 1
+            ? "Filing from <strong>" + escapeHtml(n.from) + "</strong> to <strong>" + escapeHtml(n.to) +
+              "</strong> ends within " + GRID.near_pct + " of optimal."
+            : "No other filing age comes within " + GRID.near_pct + " of optimal.";
+
+          document.getElementById("details").hidden = false;
+          renderChart(cell);
+        }
+
+        document.querySelectorAll(".heat button.cell").forEach((btn) => btn.addEventListener("click", () => select(btn)));
       })();
     </script>
-
-    <details class="table-details">
-      <summary>All filing months ({{ result.rows|length }} rows)</summary>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Wait</th>
-              <th>Start Date</th>
-              <th>File at</th>
-              <th>Start $/mo</th>
-              <th>Months</th>
-              <th>Gross Benefits</th>
-              <th>Est Taxes</th>
-              <th>Net Benefits</th>
-              <th>Portfolio@{{ result.end_age }}</th>
-              <th>vs. Best</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in result.rows %}
-            <tr class="{% if row.is_best %}best{% endif %}">
-              <td>{{ row.wait_months }}{% if row.is_best %} *{% endif %}</td>
-              <td>{{ row.start_date }}</td>
-              <td>{{ row.filing_age }}</td>
-              <td>{{ row.monthly_benefit }}</td>
-              <td>{{ row.collection_months }}</td>
-              <td>{{ money(row.total_benefits) }}</td>
-              <td>{{ money(row.total_taxes) }}</td>
-              <td>{{ money(row.net_benefits) }}</td>
-              <td>{{ money(row.portfolio) }}</td>
-              {% if row.vs_best %}<td class="neg">{{ money(row.vs_best) }}</td>{% else %}<td>best</td>{% endif %}
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </details>
     {% endif %}
   </div>
 </body>

@@ -1,6 +1,6 @@
 # Social Security Optimizer
 
-Find the Social Security filing age (month by month, from now through age 70) that leaves you with the largest portfolio at a chosen end age, assuming every after-tax check is invested.
+Find the Social Security filing age (month by month, from now through age 70) that leaves you with the largest portfolio, assuming every after-tax check is invested, and see how that answer depends on how long you live and what your investments earn.
 
 ## Run locally
 
@@ -25,44 +25,48 @@ Then open <http://127.0.0.1:5000>, enter your numbers, and click **Calculate**. 
 
 Options: `python3 main.py --port 8080` (different port), `--host 0.0.0.0` (reachable from other devices on your network).
 
-## Inputs (web form)
+## How it works
 
-| Field | Meaning | Form default |
-|-------|---------|--------------|
-| Age (y / mo) | Your current age | 64 y 3 m |
+Enter four numbers and click **Calculate**:
+
+| Field | Meaning | Default |
+|-------|---------|---------|
 | FRA Benefit ($/mo) | Monthly benefit at Full Retirement Age (from your SSA statement) | $4,000 |
-| End age | Age the analysis runs to | 85 |
-| COLA % | Annual cost-of-living adjustment | 3% |
-| Return % | Annual return on invested benefits | 5% |
 | Tax % | Marginal tax rate applied to benefits | 24% |
+| COLA % | Annual cost-of-living increase to your benefit | 3.5% |
+| Inflation % | Used to convert all amounts to today's dollars | 3.5% |
+
+The app then finds the best filing age for every combination of:
+
+- **End age** (how long you live): 80 to 90, in 1-year steps
+- **Investment return** (actual return, before inflation): 3% to 10%, in 1-point steps
+
+and shows the result as a heatmap (88 squares). Darker squares mean wait longer. Click a square to see that combination's summary (optimal filing age, starting benefit, total benefits, portfolio at the end age, taxes), the range of filing ages within 1% of the best, and a chart of portfolio and total benefits by the age you start.
+
+Every filing age from 62 to 70 is considered. Current age is ignored: it only limits which options are still available, not what each one is worth.
 
 ## Model
 
-1. **Filing age** — Every month from now through age 70 is evaluated. Full Retirement Age is fixed at 67 (born 1960 or later).
+All amounts are in **today's dollars**: everything is deflated month by month at the inflation rate. The return on the heatmap is the actual investment return, before inflation; its buying power after inflation is roughly return − inflation.
+
+1. **Filing age** — Every month from 62 through 70 is evaluated. Full Retirement Age is fixed at 67 (born 1960 or later).
 2. **Benefit adjustment** (SSA rules):
    - Early: −5/9 of 1% per month for the first 36 months before FRA, −5/12 of 1% per month beyond that (62 → 70% of the FRA benefit).
    - Delayed: +2/3 of 1% per month after FRA (70 → 124%).
-3. **COLA** — Applied every January, including the years before you file.
+3. **COLA** — Applied once a year from age 62, including the years before you file (as SSA does). If COLA is below inflation, your benefit loses buying power each year.
 4. **Taxes** — 85% of each check is taxed at your marginal rate (the maximum taxable share; actual taxability depends on your other income).
 5. **Investment** — Each after-tax check goes into a portfolio earning the stated return, compounded monthly. Investment gains are not taxed.
 6. **Optimal** — The filing month with the largest portfolio at the end age.
 
-## Reading the results
-
-- **Optimal vs. other choices** — how much more the optimal filing age leaves you at the end age than filing now, at 67, and at 70 (in dollars and %).
-- **Near-optimal range** — every filing age that ends within 1% of the best. The curve is usually flat near the top, so treat this range, not the single "optimal" month, as the answer.
-- **Nominal / Today's dollars** — toggle at the top of the summary. Today's dollars deflates every amount back to today using the COLA rate as inflation. The best filing age is the same either way; only the dollar figures change.
-- **Table** — every filing month, with a "vs. Best" column.
-
-The result depends heavily on the end age: earlier end ages favor filing now, later ones favor waiting until 70. Try a few. Not modeled: spousal/survivor benefits, the earnings test if you work before FRA, and mortality risk.
+Reading the heatmap: short lives and high returns favor filing at 62; long lives and low returns favor waiting until 70. Near the boundary the curve is flat, so check the "within 1%" range rather than relying on a single month. Not modeled: spousal/survivor benefits, the earnings test if you work before FRA, and mortality risk.
 
 ## Code layout
 
 | File | Purpose |
 |------|---------|
 | `calculator.py` | Benefit rules and month-by-month simulation (`UserProfile`, `simulate_scenario`, `all_scenarios`) |
-| `webapp.py` | Flask app and form handling |
-| `templates/index.html` | Page, charts (Chart.js), results table |
+| `webapp.py` | Flask app, form handling, heatmap grid |
+| `templates/index.html` | Page, heatmap, details and chart (Chart.js) |
 | `formatting.py` | Age and money formatting |
 | `main.py` | Starts the local server |
 

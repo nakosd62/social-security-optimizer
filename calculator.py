@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,8 @@ class UserProfile:
     cola_annual_rate: float = 0.03
     investment_annual_rate: float = 0.04
     tax_rate: float = 0.24
+    # Inflation used to convert to today's dollars. None = same as COLA.
+    inflation_annual_rate: Optional[float] = None
 
 
 @dataclass(frozen=True)
@@ -34,7 +37,7 @@ class ScenarioResult:
     final_portfolio_value: float
     total_nominal_value: float  # benefits + investment growth (final portfolio)
     portfolio_history: list[float]
-    # Same figures in today's dollars (deflated month by month at the COLA rate)
+    # Same figures in today's dollars (deflated month by month at the inflation rate)
     real_total_benefits: float = 0.0
     real_total_taxes: float = 0.0
     real_net_benefits: float = 0.0
@@ -122,8 +125,10 @@ def simulate_scenario(profile: UserProfile, wait_months: int) -> ScenarioResult:
 
     running_benefit = profile.fra_benefit * benefit_factor(months_diff)
     invest_r = monthly_rate(profile.investment_annual_rate)
-    # Inflation is assumed equal to COLA (COLA is CPI-indexed).
-    inflation_r = monthly_rate(profile.cola_annual_rate)
+    inflation_annual = (
+        profile.cola_annual_rate if profile.inflation_annual_rate is None else profile.inflation_annual_rate
+    )
+    inflation_r = monthly_rate(inflation_annual)
 
     portfolio = 0.0
     benefits_sum = 0.0

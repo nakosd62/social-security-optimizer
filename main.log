@@ -8,17 +8,70 @@ Open http://127.0.0.1:5000 in your browser
 Open http://127.0.0.1:5000 in your browser
  * Debugger is active!
  * Debugger PIN: 508-312-268
-127.0.0.1 - - [14/Oct/2026 11:53:05] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Oct/2026 11:53:08] "POST / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Oct/2026 11:56:13] "POST / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Oct/2026 11:56:56] "POST / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Oct/2026 12:15:05] "POST / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Oct/2026 12:15:16] "POST / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Oct/2026 12:15:41] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 14:53:59] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 14:53:59] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
  * Detected change in '/Users/dimitris/Coding/social-security-optimizer/webapp.py', reloading
  * Restarting with stat
 Open http://127.0.0.1:5000 in your browser
  * Debugger is active!
  * Debugger PIN: 508-312-268
-127.0.0.1 - - [14/Oct/2026 12:22:57] "POST / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Oct/2026 12:22:57] "GET /static/favicon.svg HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 14:59:57] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 14:59:57] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [14/Oct/2026 15:02:40] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:02:40] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [14/Oct/2026 15:06:37] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:06:37] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [14/Oct/2026 15:12:11] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:12:11] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+ * Detected change in '/Users/dimitris/Coding/social-security-optimizer/webapp.py', reloading
+ * Restarting with stat
+Open http://127.0.0.1:5000 in your browser
+ * Debugger is active!
+ * Debugger PIN: 508-312-268
+127.0.0.1 - - [14/Oct/2026 15:16:08] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:16:08] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+ * Detected change in '/Users/dimitris/Coding/social-security-optimizer/webapp.py', reloading
+ * Restarting with stat
+Open http://127.0.0.1:5000 in your browser
+ * Debugger is active!
+ * Debugger PIN: 508-312-268
+127.0.0.1 - - [14/Oct/2026 15:19:22] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:19:22] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+ * Detected change in '/Users/dimitris/Coding/social-security-optimizer/calculator.py', reloading
+ * Restarting with stat
+Open http://127.0.0.1:5000 in your browser
+ * Debugger is active!
+ * Debugger PIN: 508-312-268
+ * Detected change in '/Users/dimitris/Coding/social-security-optimizer/webapp.py', reloading
+ * Restarting with stat
+Open http://127.0.0.1:5000 in your browser
+ * Debugger is active!
+ * Debugger PIN: 508-312-268
+127.0.0.1 - - [14/Oct/2026 15:23:50] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:23:50] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [14/Oct/2026 15:24:18] "POST / HTTP/1.1" 200 -
+ * Detected change in '/Users/dimitris/Coding/social-security-optimizer/webapp.py', reloading
+ * Restarting with stat
+Open http://127.0.0.1:5000 in your browser
+ * Debugger is active!
+ * Debugger PIN: 508-312-268
+127.0.0.1 - - [14/Oct/2026 15:26:00] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:26:00] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [14/Oct/2026 15:26:33] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:26:33] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+ * Detected change in '/Users/dimitris/Coding/social-security-optimizer/webapp.py', reloading
+ * Restarting with stat
+Open http://127.0.0.1:5000 in your browser
+ * Debugger is active!
+ * Debugger PIN: 508-312-268
+127.0.0.1 - - [14/Oct/2026 15:30:18] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:30:18] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+ * Detected change in '/Users/dimitris/Coding/social-security-optimizer/webapp.py', reloading
+ * Restarting with stat
+Open http://127.0.0.1:5000 in your browser
+ * Debugger is active!
+ * Debugger PIN: 508-312-268
+127.0.0.1 - - [14/Oct/2026 15:31:43] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:31:43] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [14/Oct/2026 15:38:44] "POST / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2026 15:38:44] "[36mGET /static/favicon.svg HTTP/1.1[0m" 304 -
